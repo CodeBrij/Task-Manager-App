@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="img/ico.png" type="image/png">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+    <title>To-Do-List</title>
+</head>
+
+<body>
+    <div id="overlay">
+        <div class="loader"></div>
+    </div>
+    <div class="home">
+        <div class="container-main">
+
+            <div class="container-left" id="containerLeft">
+
+                <div class="profile center top">
+                    <img src="img/profile.png" alt="">
+                    <div>
+                        <p class="name" id="name">Loading...</p>
+                        <p class="email" id="email">Loading...</p>
+                    </div>
+                </div>
+
+                <div class="menu center">
+                
+                    <div class="list">
+                        <ul>
+                            <li id="o1"><a href="#"><i class='bx bx-sun' id="i1"></i><span>My day</span></a></li>
+                            <li id="o4"><a href="#"><i class='bx bx-extension' id="i4"></i><span>All tasks</span></a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="logout center">
+                    <hr>
+                    <a href="#" id="logoutLink"><i class='bx bx-log-out'></i><span>Logout</span></a>
+                </div>
+
+            </div>
+
+            <div class="container-right">
+
+                <div class="hamburger-container">
+                    <div class="burger" id="burgerIcon">
+                        <div class="line"></div>
+                        <div class="line"></div>
+                        <div class="line"></div>
+                    </div>
+                </div>
+
+                <div class="container-sub center">
+                    <div class="header">
+                        <h2 id="header_title">No tasks</h2>
+                        <div class="buttons">
+                            <div></div>
+                            <div></div>
+                            <div></div>
+                        </div>
+                    </div>
+
+                    <div class="card-holder" id="TaskContainer">
+                        <!-- sample data -->
+                    </div>
+
+                    <div class="add-new ">
+                        <div class="card-new align">
+                            <div class="group1">
+                                <div style="width: 70%;"><i class='bx bx-plus'></i> <input type="text" name="todo"
+                                        id="todo" placeholder="Add a task" required></div>
+                                <div><input type="date" name="date" id="duedate" required></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <script src="js/script.js"></script>
+    <script>
+
+        window.addEventListener('load', function () {
+            document.getElementById('overlay').style.display = 'none';
+        });
+
+    </script>
+    <script>
+        function showDivisionsWithDelay() {
+            const cardDivisions = document.querySelectorAll(".card");
+            const delay = 300;
+
+            cardDivisions.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = 1;
+                }, (index + 1) * delay);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('duedate').valueAsDate = new Date();
+            const taskContainer = document.getElementById("TaskContainer");
+            const addButton = document.querySelector(".bx-plus");
+            const textInput = document.getElementById("todo");
+            const dateInput = document.getElementById("duedate");
+            const myDayLink = document.getElementById("o1");
+            const thisWeekLink = document.getElementById("o2");
+            const thisMonthLink = document.getElementById("o3");
+            const otherLink = document.getElementById("o4");
+            const titleLink = document.getElementById("header_title");
+
+            const generateNumericID = () => {
+                return Date.now() + Math.floor(Math.random() * 1000);
+            };
+
+            const saveData = () => {
+                const taskDescription = textInput.value;
+                const dueDate = dateInput.value;
+
+                if (taskDescription.trim() === "" || dueDate === "") {
+                    swal({
+                        title: "Error",
+                        text: "Please enter both task and due date!",
+                        icon: "error",
+                    });
+                } else {
+                    const id = generateNumericID();
+                    const task = {
+                        id: id,
+                        text: taskDescription,
+                        date: dueDate,
+                        completed: false,
+                        timestamp: Date.now(),
+                    };
+
+                    const taskData = JSON.stringify(task);
+                    localStorage.setItem(id, taskData);
+                    textInput.value = "";
+                    dateInput.value = "";
+                    displayTasks(currentSection);
+                }
+            };
+
+            addButton.addEventListener("click", saveData);
+
+            textInput.addEventListener("keypress", (event) => {
+                if (event.key === "Enter") {
+                    saveData();
+                }
+            });
+
+            dateInput.addEventListener("keypress", (event) => {
+                if (event.key === "Enter") {
+                    saveData();
+                }
+            });
+
+            const isToday = (dateString) => {
+                const today = new Date();
+                const date = new Date(dateString);
+                return date.toDateString() === today.toDateString();
+            };
+
+            const displayTasks = (section, tasksToDisplay) => {
+                currentSection = section;
+                const tasks = Object.entries(localStorage)
+                    .filter(([key]) => key !== "userPreferences")
+                    .map(([, tasks]) => JSON.parse(tasks));
+                const tasksToRender = tasksToDisplay || tasks;
+                tasks.sort((a, b) => new Date(a.date) - new Date(b.date));
+                const todayDate = new Date().toLocaleDateString("en-CA");
+
+                const filteredTasks = tasksToRender.filter((task) => {
+                    switch (section) {
+                        case "myDay":
+                            titleLink.textContent = "My Day";
+                            return task.date === todayDate;
+                        case "thisWeek":
+                            titleLink.textContent = "Current Week";
+                            const getStartOfWeek = (date) => {
+                                const day = date.getDay();
+                                return new Date(
+                                    date.getFullYear(),
+                                    date.getMonth(),
+                                    date.getDate() - day
+                                );
+                            };
+
+                            const getEndOfWeek = (date) => {
+                                const day = date.getDay();
+                                return new Date(
+                                    date.getFullYear(),
+                                    date.getMonth(),
+                                    date.getDate() + (6 - day)
+                                );
+                            };
+
+                            const today = new Date();
+                            const startOfWeek = getStartOfWeek(today);
+                            const endOfWeek = getEndOfWeek(today);
+
+                            const taskDate = new Date(task.date);
+
+                            return taskDate >= startOfWeek && taskDate <= endOfWeek;
+                        case "thisMonth":
+                            titleLink.textContent = "Current Month";
+                            const getStartOfMonth = (date) => {
+                                return new Date(date.getFullYear(), date.getMonth(), 1);
+                            };
+
+                            const getEndOfMonth = (date) => {
+                                return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+                            };
+                            const startOfMonth = getStartOfMonth(new Date());
+                            const endOfMonth = getEndOfMonth(new Date());
+                            return (
+                                task.date >= startOfMonth.toISOString().slice(0, 10) &&
+                                task.date <= endOfMonth.toISOString().slice(0, 10)
+                            );
+                        case "other":
+                            titleLink.textContent = "All tasks";
+                            return true;
+                        default:
+                            return false;
+                    }
+                });
+
+                taskContainer.innerHTML = filteredTasks
+                    .map(
+                        (task) => `
+          <div class="card align" data-task-id="${task.id}">
+            <input type="checkbox" name="task" id="${task.id}" ${task.completed ? "checked" : ""}>
+            <div class="task-details">
+              <div class="task-text" contenteditable="true">${task.text}</div>
+              <input type="date" class="task-date" value="${task.date}">
+            </div>
+            <i class='bx bx-trash' data-task-id="${task.id}"></i>
+          </div>
+        `
+                    )
+                    .join("");
+
+                document.querySelectorAll('.task-text').forEach(item => {
+                    item.addEventListener('input', updateTask);
+                });
+
+                document.querySelectorAll('.task-date').forEach(item => {
+                    item.addEventListener('change', updateTask);
+                });
+
+                showDivisionsWithDelay();
+
+                taskContainer.addEventListener("change", (event) => {
+                    if (event.target.type === "checkbox") {
+                        const taskId = event.target.id;
+                        const taskData = JSON.parse(localStorage.getItem(taskId));
+                        taskData.completed = event.target.checked;
+                        localStorage.setItem(taskId, JSON.stringify(taskData));
+                    }
+                });
+
+                taskContainer.addEventListener("click", (event) => {
+                    if (event.target.classList.contains("bx-trash")) {
+                        const taskId = event.target.getAttribute("data-task-id");
+                        swal({
+                            title: "Delete Task?",
+                            text: "Are you sure you want to delete this task?",
+                            icon: "warning",
+                            buttons: true,
+                            dangerMode: true,
+                        }).then((willDelete) => {
+                            if (willDelete) {
+                                localStorage.removeItem(taskId);
+                                displayTasks(currentSection);
+                            }
+                        });
+                    }
+                });
+            };
+
+            const updateTask = (event) => {
+                const taskCard = event.target.closest('.card');
+                const taskId = taskCard.getAttribute('data-task-id');
+                const taskData = JSON.parse(localStorage.getItem(taskId));
+                const newTaskText = taskCard.querySelector('.task-text').innerText;
+                const newTaskDate = taskCard.querySelector('.task-date').value;
+
+                if (event.target.classList.contains('task-text')) {
+                    taskData.text = newTaskText;
+                }
+
+                if (event.target.classList.contains('task-date')) {
+                    taskData.date = newTaskDate;
+                }
+
+                localStorage.setItem(taskId, JSON.stringify(taskData));
+            };
+
+            myDayLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                displayTasks("myDay");
+            });
+
+            thisWeekLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                displayTasks("thisWeek");
+            });
+
+            thisMonthLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                displayTasks("thisMonth");
+            });
+
+            otherLink.addEventListener("click", (e) => {
+                e.preventDefault();
+                displayTasks("other");
+            });
+
+            displayTasks("myDay");
+        });
+    </script>
+</body>
+
+</html>
