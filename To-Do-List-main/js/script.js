@@ -174,6 +174,23 @@ document.addEventListener("DOMContentLoaded", () => {
             )
             .join("");
 
+        const searchInput = document.getElementById("search");
+
+        // Function to handle the search input and filter tasks
+        const handleSearch = () => {
+            toggleMenu();
+            const searchText = searchInput.value.trim().toLowerCase();
+            if (searchText !== "") {
+                // Filter tasks based on the search text
+                const filteredTasks = tasks.filter((task) =>
+                    task.text.toLowerCase().includes(searchText)
+                );
+                displayTasks(currentSection, filteredTasks);
+            } else {
+                // If the search text is empty, display all tasks
+                displayTasks(currentSection);
+            }
+        };
         
         
         // Add keydown event listener to the search input
@@ -390,8 +407,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const preferences = getUserPreferences();
 
     if (
-        preferences.name === "Name" &&
-        preferences.email === "example@example.com"
+        preferences.name === "John Doe" &&
+        preferences.email === "john@gmail.com"
     ) {
         // If preferences are default, prompt the user for their name and email
         promptForNameAndEmail();
